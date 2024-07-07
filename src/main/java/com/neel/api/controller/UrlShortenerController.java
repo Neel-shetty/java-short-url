@@ -14,13 +14,9 @@ public class UrlShortenerController {
     @Autowired
     private UrlShortenerService urlShortenerService;
 
-    // accept time in milliseconds
     @PostMapping("/shorten")
     public String shortenUrl(@RequestParam String url, @RequestParam(required = false) Long expiryTime) {
-        // return as json response
         String shortUrl = urlShortenerService.shortenUrl(url, expiryTime);
-        // urlShortenerService.shortenUrl(url, System.currentTimeMillis() + 24 * 60 * 60
-        // * 1000 * 7)
         return "{\"shortUrl\":\"" + shortUrl + "\"}";
     }
 
