@@ -25,15 +25,19 @@ public class UrlShortenerService {
                     "(/.*)?$", // Optional path
             Pattern.CASE_INSENSITIVE);
 
-    public String shortenUrl(String originalUrl) {
+    public String shortenUrl(String originalUrl, Long expiryTime) {
         validateUrl(originalUrl);
-        String shortUrl;
+        String shortUrl = generateUniqueShortUrl(originalUrl);
 
-        shortUrl = generateShortUrl(originalUrl);
+        UrlEntry entry;
+        if (expiryTime != null) {
+            entry = new UrlEntry(originalUrl, System.currentTimeMillis() + expiryTime);
+        } else {
+            entry = new UrlEntry(originalUrl);
+        }
 
-        urlMap.put(shortUrl, new UrlEntry(originalUrl));
-        System.out.println(urlMap);
-        return shortUrl;
+        urlMap.put(shortUrl, entry);
+        return "http://localhost:8080/api/" + shortUrl;
     }
 
     public String getOriginalUrl(String shortUrl) {
@@ -55,11 +59,12 @@ public class UrlShortenerService {
         return matcher.matches();
     }
 
-    private String generateShortUrl(String originalUrl) {
+    private String generateUniqueShortUrl(String originalUrl) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             byte[] hash = digest.digest(originalUrl.getBytes(StandardCharsets.UTF_8));
-            return Base64.getUrlEncoder().encodeToString(hash).substring(0, 6);
+            String encoded = Base64.getUrlEncoder().withoutPadding().encodeToString(hash);
+            return encoded.substring(0, 6);
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("SHA-256 algorithm not found", e);
         }
@@ -67,7 +72,7 @@ public class UrlShortenerService {
 
     private static class UrlEntry {
         private final String originalUrl;
-        private final Long expiry; // Use Long for nullable field
+        private final Long expiry;
 
         UrlEntry(String originalUrl) {
             this.originalUrl = originalUrl;
